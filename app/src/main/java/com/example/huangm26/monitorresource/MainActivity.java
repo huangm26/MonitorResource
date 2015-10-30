@@ -1,17 +1,15 @@
 package com.example.huangm26.monitorresource;
 
-import android.app.ActivityManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ListView;
 
-import java.util.Iterator;
 import java.util.List;
+
 import library.src.main.java.com.jaredrummler.android.processes.ProcessManager;
-import library.src.main.java.com.jaredrummler.android.processes.models.AndroidAppProcess;
 import library.src.main.java.com.jaredrummler.android.processes.models.AndroidProcess;
 
 /**
@@ -31,25 +29,37 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayShowTitleEnabled(false);
 
 
+        /*
+         ** get the running processes by using the customized library
+         */
 //        ActivityManager actvityManager = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
 //        List<ActivityManager.RunningAppProcessInfo> processList =  actvityManager.getRunningAppProcesses();
         List<AndroidProcess> processList = ProcessManager.getRunningProcesses();
-        StringBuilder sb = new StringBuilder();
-        for (AndroidProcess process : processList) {
-            sb.append("Process name ").append(process.name).append("pid ").append(process.pid).append('\n');
-        }
-        Log.d("Process", "List size " + processList.size());
-//        Iterator iterator = processList.iterator();
-        Log.d("Process",sb.toString());
-//        while(iterator.hasNext())
-//        {
-//            ActivityManager.RunningAppProcessInfo info = (ActivityManager.RunningAppProcessInfo)iterator.next();
-//            Log.d("Process ","Process " + info.pid + " " + info.processName);
-//        }
+
+        //Display the current process number and CPU usage, and memory usage
+        displayGeneralInfo(processList);
+
+
+        //Display the processes in the listView
+        displayProcessList(processList);
     }
 
-    private void setProcessList( List<ActivityManager.RunningAppProcessInfo> processList)
+    private void displayProcessList(List<AndroidProcess> processList)
     {
+        //find the listView
+        ListView listView = (ListView)findViewById(R.id.processes_list);
+        /*
+         * The Customer adapter can handle List data instead of array
+         * It will also display the process name and Pid in the text view.
+         * Can add extra information if needed!!!!!
+         */
+        CustomArrayAdapter myAdapter = new CustomArrayAdapter(this, processList);
+        listView.setAdapter(myAdapter);
+    }
+
+    private void displayGeneralInfo(List<AndroidProcess> processList)
+    {
+
     }
 
     @Override
