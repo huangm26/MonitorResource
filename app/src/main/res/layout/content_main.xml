@@ -63,21 +63,20 @@
         android:layout_below="@+id/horizontalScrollView"
         android:layout_alignParentEnd="true" />
 
-    <ExpandableListView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/process_list"
-        android:layout_below="@+id/general_info"
-        android:layout_alignParentStart="true" />
-
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Memory usage info"
         android:id="@+id/memory_info"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="10dp"
+        android:layout_below="@+id/general_info"
         android:layout_alignParentEnd="true" />
+
+    <ListView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/processes_list"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/memory_info" />
 
 
 </RelativeLayout>

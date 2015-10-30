@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
         List<AndroidProcess> processList = ProcessManager.getRunningProcesses();
         StringBuilder sb = new StringBuilder();
         for (AndroidProcess process : processList) {
-            sb.append(process.name).append('\n');
+            sb.append("Process name ").append(process.name).append("pid ").append(process.pid).append('\n');
         }
         Log.d("Process", "List size " + processList.size());
 //        Iterator iterator = processList.iterator();
