@@ -1,12 +1,15 @@
 package com.example.huangm26.monitorresource;
 
 import android.app.ActivityManager;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -24,7 +27,9 @@ import library.src.main.java.com.jaredrummler.android.processes.models.AndroidPr
  */
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity{
+
+    ListView listView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,33 +50,65 @@ public class MainActivity extends AppCompatActivity {
 
         //Display the current process number and CPU usage, and memory usage
         displayGeneralInfo(processList);
-
-
         //Display the processes in the listView
         displayProcessList(processList);
+
 
     }
 
     private void displayProcessList(List<AndroidProcess> processList)
     {
         //find the listView
-        ListView listView = (ListView)findViewById(R.id.processes_list);
+        listView = (ListView)findViewById(R.id.processes_list);
+
         /*
          * The Customer adapter can handle List data instead of array
          * It will also display the process name and Pid in the text view.
          * Can add extra information if needed!!!!!
          */
-        CustomArrayAdapter myAdapter = new CustomArrayAdapter(this, processList);
+        final CustomArrayAdapter myAdapter = new CustomArrayAdapter(this, processList);
         listView.setAdapter(myAdapter);
+
+
+//        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//            @Override
+//            public void onItemClick(AdapterView<?> arg0, View view, int position,
+//                                    long id) {
+//                AndroidProcess item = (AndroidProcess) myAdapter.getItem(position);
+//                Log.d("Process", "Process Choosen    " + item.name);
+//            }
+//        });
+        setAdapterListener(myAdapter);
+    }
+
+    private void setAdapterListener(final CustomArrayAdapter myAdapter)
+    {
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> arg0, View view, int position,
+                                    long id) {
+                AndroidProcess item = (AndroidProcess) myAdapter.getItem(position);
+                Log.d("Process", "Process Choosen    " + item.name);
+                startNewIntent(item);
+            }
+        });
+    }
+
+    private void startNewIntent(AndroidProcess processChosen)
+    {
+        Intent displayDetail = new Intent(this, ProcessDetail.class);
+        displayDetail.putExtra("PID",processChosen.pid);
+        displayDetail.putExtra("Name", processChosen.name);
+        startActivity(displayDetail);
     }
 
     private void displayGeneralInfo(List<AndroidProcess> processList)
     {
         displayMemInfo();
-        displayCPU();
+        calculateCPU();
     }
 
-    private void displayCPU()
+    private void calculateCPU()
     {
         long total = 0;
         long idle = 0;
@@ -83,24 +120,27 @@ public class MainActivity extends AppCompatActivity {
             reader.close();
 
             String[] toks = load.split(" ");
-            Log.d("bbbb", "bbbb" + toks[2]);
-            Log.d("cccc", "cccc" + toks[8]);
             long currTotal = Long.parseLong(toks[2]) + Long.parseLong(toks[3]) + Long.parseLong(toks[4]);
             long currIdle = Long.parseLong(toks[5]);
 
             usage = currTotal * 100.0f / (currTotal + currIdle);
             total = currTotal;
             idle = currIdle;
-            TextView cpuView = (TextView) findViewById(R.id.general_info);
-            StringBuilder sb = new StringBuilder("Current CPU usage ");
-            sb.append(usage);
-            sb.append("%");
-            cpuView.setText(sb.toString());
         }
         catch(IOException ex)
         {
             ex.printStackTrace();
         }
+
+        displayCPU(usage);
+    }
+
+    private void displayCPU(float usage){
+        TextView cpuView = (TextView) findViewById(R.id.general_info);
+        StringBuilder sb = new StringBuilder("Current CPU usage ");
+        sb.append(usage);
+        sb.append("%");
+        cpuView.setText(sb.toString());
     }
 
     /*
@@ -119,12 +159,16 @@ public class MainActivity extends AppCompatActivity {
         sb.append(availableMegs).append("MB").append(" Total Available ").append(totalMem).append("MB");
         memoryView.setText(sb.toString());
     }
+
+
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -149,4 +193,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
+
 }
