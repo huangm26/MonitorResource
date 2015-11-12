@@ -9,19 +9,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
 public class ProcessDetail extends AppCompatActivity implements View.OnClickListener{
 
-    long total = 0;
-    long idle = 0;
-    float total_usage = 0;
-
     float process_usage = 0;
-    long memory_usage = 0;
+    double memory_usage = 0;
+    float uptime = 0;
+    long start_time = 0;
+    long total_time = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,11 +25,14 @@ public class ProcessDetail extends AppCompatActivity implements View.OnClickList
         setSupportActionBar(toolbar);
         Button exit_button = (Button) findViewById(R.id.exit_button);
         exit_button.setOnClickListener(this);
-
         int pid = getIntent().getExtras().getInt("PID");
         String name = getIntent().getExtras().getString("Name");
 //        Toast.makeText(this, name + " PID " + pid, Toast.LENGTH_SHORT).show();
-        process_usage = parseCPUUsage(pid);
+        uptime = getIntent().getExtras().getFloat("uptime");
+        start_time = getIntent().getExtras().getLong("start_time");
+        total_time = getIntent().getExtras().getLong("total_time");
+
+        process_usage = parseCPUUsage();
         memory_usage = getMemory(pid, name);
 
         TextView displayView = (TextView) findViewById(R.id.process_info);
@@ -42,56 +40,28 @@ public class ProcessDetail extends AppCompatActivity implements View.OnClickList
         sb.append(name).append("\n");
         sb.append("The PID    ").append(pid).append("\n");
         sb.append("The CPU usage    ").append(process_usage).append("\n");
-        sb.append("The Memory usage    ").append(memory_usage).append("\n");
+        sb.append("The Memory usage    ").append(memory_usage).append(" MB").append("\n");
         displayView.setText(sb.toString());
     }
 
-    private void calculateTotalCPU()
+    /**
+     * total_time = utime + stime
+     * total_time = total_time + cutime + cstime
+     * seconds = uptime - (starttime / Hertz)
+     * cpu_usage = 100 * ((total_time / Hertz) / seconds)
+     */
+
+    private float parseCPUUsage()
     {
-        try
-        {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream("/proc/stat")), 1000);
-            String load = reader.readLine();
-            reader.close();
-
-            String[] toks = load.split(" ");
-            long currTotal = Long.parseLong(toks[2]) + Long.parseLong(toks[3]) + Long.parseLong(toks[4]);
-            long currIdle = Long.parseLong(toks[5]);
-
-            total_usage = currTotal * 100.0f / (currTotal + currIdle);
-            total = currTotal;
-            idle = currIdle;
-        }
-        catch(IOException ex)
-        {
-            ex.printStackTrace();
-        }
-
-    }
-
-    private float parseCPUUsage(int pid)
-    {
-        calculateTotalCPU();
-        float usage = 0.0f;
-        try
-        {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream("/proc/" + pid + "/stat")), 1000);
-            String load = reader.readLine();
-            reader.close();
-
-            String[] toks = load.split(" ");
-//            Toast.makeText(this, toks[1], Toast.LENGTH_SHORT).show();
-            long currTotal = Long.parseLong(toks[13]) + Long.parseLong(toks[14]);
-            usage = currTotal * 100.0f / (total + idle);
-        }
-        catch(IOException ex)
-        {
-            ex.printStackTrace();
-        }
+        float usage = 0;
+        //Linux default value, sysconf(_SC_CLK_TCK) return value
+        int hertz = 100;
+        float seconds = uptime - start_time/hertz;
+        usage = 100*((total_time/hertz)/seconds);
         return usage;
     }
 
-    private long getMemory(int pid, String name)
+    private double getMemory(int pid, String name)
     {
         ActivityManager activityManager = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
         int [] pids = {pid};
@@ -102,7 +72,7 @@ public class ProcessDetail extends AppCompatActivity implements View.OnClickList
         Log.d("Memory", " pidMemoryInfo.getTotalPrivateDirty(): " + pidMemoryInfo.getTotalPrivateDirty() + "\n");
         Log.d("Memory", " pidMemoryInfo.getTotalPss(): " + pidMemoryInfo.getTotalPss() + "\n");
         Log.d("Memory", " pidMemoryInfo.getTotalSharedDirty(): " + pidMemoryInfo.getTotalSharedDirty() + "\n");
-        return (pidMemoryInfo.getTotalPrivateDirty() + pidMemoryInfo.getTotalPss() + pidMemoryInfo.getTotalSharedDirty());
+        return (pidMemoryInfo.getTotalPrivateDirty() + pidMemoryInfo.getTotalPss() + pidMemoryInfo.getTotalSharedDirty())/1024;
     }
 
     @Override

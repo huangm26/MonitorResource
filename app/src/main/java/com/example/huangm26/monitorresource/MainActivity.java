@@ -13,13 +13,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
 import java.util.List;
 
 import library.src.main.java.com.jaredrummler.android.processes.ProcessManager;
@@ -31,9 +31,10 @@ import library.src.main.java.com.jaredrummler.android.processes.models.AndroidPr
  */
 
 
-public class MainActivity extends AppCompatActivity{
+public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
     ListView listView;
+    List<AndroidAppProcess> processList;
     private BroadcastReceiver mBatInfoReceiver = new BroadcastReceiver() {
         @Override
         //When Event is published, onReceive method is called
@@ -63,12 +64,18 @@ public class MainActivity extends AppCompatActivity{
          */
 //        ActivityManager actvityManager = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
 //        List<ActivityManager.RunningAppProcessInfo> processList =  actvityManager.getRunningAppProcesses();
-        List<AndroidAppProcess> processList = ProcessManager.getRunningAppProcesses();
+        processList = ProcessManager.getRunningAppProcesses();
 
         //Display the current process number and CPU usage, and memory usage
         displayGeneralInfo(processList);
         //Display the processes in the listView
         displayProcessList(processList);
+
+        //set listener for buttons
+        Button exit = (Button)findViewById(R.id.exit);
+        Button refresh = (Button) findViewById(R.id.refresh);
+        exit.setOnClickListener(this);
+        refresh.setOnClickListener(this);
 
 
     }
@@ -85,16 +92,6 @@ public class MainActivity extends AppCompatActivity{
          */
         final CustomArrayAdapter myAdapter = new CustomArrayAdapter(this, processList);
         listView.setAdapter(myAdapter);
-
-
-//        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> arg0, View view, int position,
-//                                    long id) {
-//                AndroidProcess item = (AndroidProcess) myAdapter.getItem(position);
-//                Log.d("Process", "Process Choosen    " + item.name);
-//            }
-//        });
         setAdapterListener(myAdapter);
     }
 
@@ -116,43 +113,65 @@ public class MainActivity extends AppCompatActivity{
         Intent displayDetail = new Intent(this, ProcessDetail.class);
         displayDetail.putExtra("PID",processChosen.pid);
         displayDetail.putExtra("Name", processChosen.name);
+        // These time are used to calculate CPU usage per process
+        long utime = 0;
+        long stime = 0;
+        long cutime = 0;
+        long cstime = 0;
+        float uptime = 0;
+        long starttime = 0;
+        try {
+            utime = processChosen.stat().utime();
+            stime = processChosen.stat().stime();
+            cutime = processChosen.stat().cutime();
+            cstime = processChosen.stat().cstime();
+            starttime = processChosen.stat().starttime();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        long total_time = utime + stime + cutime + cstime;
+        uptime = readUpTime();
+        displayDetail.putExtra("total_time", total_time);
+        displayDetail.putExtra("start_time",starttime);
+        displayDetail.putExtra("uptime", uptime);
+        Log.d("start_time", String.valueOf(starttime));
+        Log.d("Time elapsed", String.valueOf(uptime - starttime/100));
         startActivity(displayDetail);
+    }
+
+    /*
+        The helper funtion to get the uptime, which is the current system time.
+     */
+    private float readUpTime()
+    {
+        RandomAccessFile reader = null;
+        float uptime = 0;
+        try {
+            reader = new RandomAccessFile("/proc/uptime", "r");
+            String load = reader.readLine();
+            String[] toks = load.split(" +");  // Split on one or more spaces
+            uptime = Float.parseFloat(toks[0]);
+            Log.d("uptime", String.valueOf(uptime));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return uptime;
     }
 
     private void displayGeneralInfo(List<AndroidAppProcess> processList)
     {
         displayMemInfo();
-        calculateCPU();
+        displayCPU();
     }
 
-    private void calculateCPU()
-    {
-        long total = 0;
-        long idle = 0;
-        float usage = 0;
-        try
-        {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream("/proc/stat")), 1000);
-            String load = reader.readLine();
-            reader.close();
-
-            String[] toks = load.split(" ");
-            long currTotal = Long.parseLong(toks[2]) + Long.parseLong(toks[3]) + Long.parseLong(toks[4]);
-            long currIdle = Long.parseLong(toks[5]);
-
-            usage = currTotal * 100.0f / (currTotal + currIdle);
-            total = currTotal;
-            idle = currIdle;
-        }
-        catch(IOException ex)
-        {
-            ex.printStackTrace();
-        }
-
-        displayCPU(usage);
-    }
-
-    private void displayCPU(float usage){
+    /*
+        Function to display the overall CPU usage
+     */
+    private void displayCPU(){
+        float usage = readUsage()*100;
         TextView cpuView = (TextView) findViewById(R.id.general_info);
         StringBuilder sb = new StringBuilder("Current CPU usage ");
         sb.append(usage);
@@ -193,12 +212,6 @@ public class MainActivity extends AppCompatActivity{
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-//        //noinspection SimplifiableIfStatement
-//        if (id == R.id.action_settings) {
-//            return true;
-//        }
-
         switch (id)
         {
             case R.id.action_information:
@@ -211,6 +224,77 @@ public class MainActivity extends AppCompatActivity{
         return super.onOptionsItemSelected(item);
     }
 
+    /*
+        Helper function to get the current CPU usage by parsing the /proc/stat file
+     */
+    private float readUsage() {
+        try {
+            RandomAccessFile reader = new RandomAccessFile("/proc/stat", "r");
+            String load = reader.readLine();
 
+            String[] toks = load.split(" +");  // Split on one or more spaces
+            Log.d("1111", String.valueOf(toks[1]));
+            long work1 = Long.parseLong(toks[1]) + Long.parseLong(toks[2]) + Long.parseLong(toks[3]);
+            long total1 = Long.parseLong(toks[1]) + Long.parseLong(toks[2])
+                    + Long.parseLong(toks[3]) + Long.parseLong(toks[4])
+                    + Long.parseLong(toks[5]) + Long.parseLong(toks[6])
+                    + Long.parseLong(toks[7]) + Long.parseLong(toks[8]);
+            long idle1 = Long.parseLong(toks[4]);
+            long cpu1 = Long.parseLong(toks[2]) + Long.parseLong(toks[3]) + Long.parseLong(toks[5])
+                    + Long.parseLong(toks[6]) + Long.parseLong(toks[7]) + Long.parseLong(toks[8]);
 
+            try {
+                Thread.sleep(360);
+            } catch (Exception e) {}
+
+            reader.seek(0);
+            load = reader.readLine();
+            reader.close();
+
+            toks = load.split(" +");
+
+            long idle2 = Long.parseLong(toks[4]);
+            long cpu2 = Long.parseLong(toks[2]) + Long.parseLong(toks[3]) + Long.parseLong(toks[5])
+                    + Long.parseLong(toks[6]) + Long.parseLong(toks[7]) + Long.parseLong(toks[8]);
+
+            long work2 = Long.parseLong(toks[1]) + Long.parseLong(toks[2])
+                    + Long.parseLong(toks[3]);
+            long total2 = Long.parseLong(toks[1]) + Long.parseLong(toks[2])
+                    + Long.parseLong(toks[3]) + Long.parseLong(toks[4])
+                    + Long.parseLong(toks[5]) + Long.parseLong(toks[6])
+                    + Long.parseLong(toks[7]) + Long.parseLong(toks[8]);
+
+            return (float)(cpu2 - cpu1) / ((cpu2 + idle2) - (cpu1 + idle1));
+//            return (float) (work2 - work1) / ((total2 - total1));
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    private void refreshList()
+    {
+        processList = ProcessManager.getRunningAppProcesses();
+        //Display the current process number and CPU usage, and memory usage
+        displayGeneralInfo(processList);
+        //Display the processes in the listView
+        displayProcessList(processList);
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId())
+        {
+            case R.id.exit:
+                finish();
+                break;
+            case R.id.refresh:
+                refreshList();
+                break;
+            default:
+                break;
+        }
+    }
 }

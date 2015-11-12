@@ -19,39 +19,18 @@
             android:orientation="horizontal" >
 
             <Button
-                android:id="@+id/button1"
+                android:id="@+id/refresh"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:clickable="true"
-                android:text="ALL" />
-
+                android:text="Refresh" />
             <Button
-                android:id="@+id/button2"
+                android:id="@+id/exit"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:clickable="true"
-                android:text="Process" />
+                android:text="Exit" />
 
-            <Button
-                android:id="@+id/button3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:clickable="true"
-                android:text="Connection" />
-
-            <Button
-                android:id="@+id/button4"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:clickable="true"
-                android:text="Misc" />
-
-            <Button
-                android:id="@+id/button5"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:clickable="true"
-                android:text="Message" />
         </LinearLayout>
     </HorizontalScrollView>
 
