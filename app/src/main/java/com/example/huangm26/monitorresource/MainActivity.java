@@ -1,7 +1,10 @@
 package com.example.huangm26.monitorresource;
 
 import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -30,7 +33,19 @@ import library.src.main.java.com.jaredrummler.android.processes.models.AndroidPr
 public class MainActivity extends AppCompatActivity{
 
     ListView listView;
+    private BroadcastReceiver mBatInfoReceiver = new BroadcastReceiver() {
+        @Override
+        //When Event is published, onReceive method is called
+        public void onReceive(Context c, Intent i) {
+            //Get Battery %
+            int level = i.getIntExtra("level", 0);
+            //Find textview control created in main.xml
+            TextView tv = (TextView) findViewById(R.id.textfield);
+            //Set TextView with text
+            tv.setText("Battery Level: " + Integer.toString(level) + "%");
+        }
 
+    };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,6 +54,9 @@ public class MainActivity extends AppCompatActivity{
         setSupportActionBar(toolbar);
         //Hide the title of App
         getSupportActionBar().setDisplayShowTitleEnabled(false);
+
+        registerReceiver(mBatInfoReceiver, new IntentFilter(
+                Intent.ACTION_BATTERY_CHANGED));
 
 
         /*
