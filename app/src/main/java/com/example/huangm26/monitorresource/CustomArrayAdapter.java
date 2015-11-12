@@ -9,7 +9,7 @@ import android.widget.TextView;
 
 import java.util.List;
 
-import library.src.main.java.com.jaredrummler.android.processes.models.AndroidProcess;
+import library.src.main.java.com.jaredrummler.android.processes.models.AndroidAppProcess;
 
 /**
  * Created by huangm26 on 10/30/15.
@@ -20,8 +20,8 @@ import library.src.main.java.com.jaredrummler.android.processes.models.AndroidPr
 public class CustomArrayAdapter extends ArrayAdapter {
 
 
-    List<AndroidProcess> processList;
-    public CustomArrayAdapter(Context context, List<AndroidProcess> list) {
+    List<AndroidAppProcess> processList;
+    public CustomArrayAdapter(Context context, List<AndroidAppProcess> list) {
         super(context,0, list);
         processList = list;
     }

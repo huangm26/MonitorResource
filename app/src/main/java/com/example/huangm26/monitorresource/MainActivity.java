@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.util.List;
 
 import library.src.main.java.com.jaredrummler.android.processes.ProcessManager;
+import library.src.main.java.com.jaredrummler.android.processes.models.AndroidAppProcess;
 import library.src.main.java.com.jaredrummler.android.processes.models.AndroidProcess;
 
 /**
@@ -54,17 +55,15 @@ public class MainActivity extends AppCompatActivity{
         setSupportActionBar(toolbar);
         //Hide the title of App
         getSupportActionBar().setDisplayShowTitleEnabled(false);
-
         registerReceiver(mBatInfoReceiver, new IntentFilter(
                 Intent.ACTION_BATTERY_CHANGED));
-
 
         /*
          ** get the running processes by using the customized library
          */
 //        ActivityManager actvityManager = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
 //        List<ActivityManager.RunningAppProcessInfo> processList =  actvityManager.getRunningAppProcesses();
-        List<AndroidProcess> processList = ProcessManager.getRunningProcesses();
+        List<AndroidAppProcess> processList = ProcessManager.getRunningAppProcesses();
 
         //Display the current process number and CPU usage, and memory usage
         displayGeneralInfo(processList);
@@ -74,7 +73,7 @@ public class MainActivity extends AppCompatActivity{
 
     }
 
-    private void displayProcessList(List<AndroidProcess> processList)
+    private void displayProcessList(List<AndroidAppProcess> processList)
     {
         //find the listView
         listView = (ListView)findViewById(R.id.processes_list);
@@ -120,7 +119,7 @@ public class MainActivity extends AppCompatActivity{
         startActivity(displayDetail);
     }
 
-    private void displayGeneralInfo(List<AndroidProcess> processList)
+    private void displayGeneralInfo(List<AndroidAppProcess> processList)
     {
         displayMemInfo();
         calculateCPU();
@@ -211,6 +210,7 @@ public class MainActivity extends AppCompatActivity{
         }
         return super.onOptionsItemSelected(item);
     }
+
 
 
 }
