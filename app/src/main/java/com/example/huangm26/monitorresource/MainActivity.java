@@ -141,7 +141,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     /*
-        The helper funtion to get the uptime, which is the current system time.
+        The helper method to get the uptime, which is the current system time.
      */
     private float readUpTime()
     {

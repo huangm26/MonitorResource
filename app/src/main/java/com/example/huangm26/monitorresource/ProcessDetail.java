@@ -39,8 +39,9 @@ public class ProcessDetail extends AppCompatActivity implements View.OnClickList
         StringBuilder sb = new StringBuilder("The Process name:    ");
         sb.append(name).append("\n");
         sb.append("The PID    ").append(pid).append("\n");
-        sb.append("The CPU usage    ").append(process_usage).append("\n");
+        sb.append("The CPU usage    ").append(process_usage).append("%").append("\n");
         sb.append("The Memory usage    ").append(memory_usage).append(" MB").append("\n");
+        sb.append("The battery percentage used since the app started ").append(process_usage).append("%").append("\n");
         displayView.setText(sb.toString());
     }
 
